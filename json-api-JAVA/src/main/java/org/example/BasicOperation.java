@@ -12,7 +12,9 @@ import com.alachisoft.ncache.runtime.caching.expiration.ExpirationType;
 import com.alachisoft.ncache.runtime.exceptions.CacheException;
 import com.alachisoft.ncache.runtime.exceptions.OperationFailedException;
 import com.alachisoft.ncache.runtime.util.TimeSpan;
-
+import com.alachisoft.ncache.runtime.events.EventDataFilter;
+import com.alachisoft.ncache.runtime.events.EventType;
+import java.util.EnumSet;
 import java.io.*;
 import java.util.Arrays;
 import java.util.Properties;
@@ -31,9 +33,9 @@ public class BasicOperation
     private static Customer createNewCustomer()
     {
         Customer tempVar = new Customer();
-        tempVar.setCustomerID ("DAVJ");
+        tempVar.setCustomerID ("DAVJ0071");
         tempVar.setContactName ("David Johnes");
-        tempVar.setCompanyName ("Lonesome Pine Restaurant");
+        tempVar.setCompanyName ("Lonesome Pine");
         tempVar.setContactNo ( "12345-6789");
         tempVar.setAddress ("Silicon Valley, Santa Clara, California");
         return tempVar;
@@ -49,7 +51,7 @@ public class BasicOperation
         return String.format("Customer:%1$s", customer.getCustomerID());
     }
 
-   public static void getOperationUsingQuery() throws CacheException, IOException, ClassNotFoundException {
+    public static void getOperationUsingQuery() throws CacheException, IOException, ClassNotFoundException {
         String query = "Select $Value$ FROM Alachisoft.NCache.Runtime.JSON.JsonObject WHERE $Tag$ = ?";
         var queryCommand = new QueryCommand(query);
         queryCommand.getParameters().put("$Tag$","East Coast Customers");
@@ -128,7 +130,7 @@ public class BasicOperation
      */
     private static void initializeCache() throws Exception {
         //Properties properties=  getProperties();
-        String cacheName= "getKeysCache";//properties.getProperty("CacheID");
+        String cacheName="getKeysCache";//properties.getProperty("CacheID");
 
         if (cacheName == null || cacheName.isEmpty())
         {
@@ -179,7 +181,7 @@ public class BasicOperation
         // Print output on console
         System.out.println("\nJSON Object is fetched from cache");
 
-        fromJsonObjectToCustomer(cachedJsonObject);
+      // Customer customer = fromJsonObjectToCustomer(cachedJsonObject);
 
         return cachedJsonObject;
     }
@@ -221,31 +223,53 @@ public class BasicOperation
     }
 
 
+    private static void RegisterNotification() throws CacheException {
+        //Event notifications must be enabled in NCache manager->Options for events to work
+        EnumSet<EventType> e = EnumSet.allOf(EventType.class);
+        _cache.getMessagingService().addCacheNotificationListener(new CacheDataModificationImpl(), e, EventDataFilter.Metadata);
+    }
     /**
      Executing this method will perform all the operations of the sample
      */
     public static void run() throws Exception {
         // Initialize cache
         initializeCache();
-
+        //Regester Notification
+        RegisterNotification();
         // Create a simple customer object
         Customer customer = createNewCustomer();
-        JsonObject jsonObject = populateJSONObjectFromCustomer(customer);
+
+        //Method 1 for converting to Json
+        JsonObject json_Object =  customer.toJson();
+
+        //Method 2 for converting to Json
+        JsonObject method2 = populateJSONObjectFromCustomer(customer);
+
 
         String key = getKey(customer);
 
-        // Adding item synchronously
-       // addJsonObjectToCache(key, jsonObject);
+      // addJsonObjectToCache(key,json_Object);
 
+        JsonObject object =    getJsonObjectFromCache("Customer:DAVJ0078");
+
+        //Method 1 for converting to Custom object
+        Customer cus =  Customer.fromJson(object);
+
+        //Method 2 for converting to Custom object Directly
+        Customer CustomerMethod2 = fromJsonObjectToCustomer(object);
+
+        System.out.println(cus);
+         // Adding item synchronously
+         // addJsonObjectToCache(key, jsonObject);
 
         // Get the object from cache
-       // jsonObject = getJsonObjectFromCache(key);
+         // jsonObject = getJsonObjectFromCache(key);
 
-        getOperationUsingQuery();
+         // getOperationUsingQuery();
 
 
-        // Modify the object and update in cache
-        // updateJsonObjectInCache(key, jsonObject);
+       // Modify the object and update in cache
+         updateJsonObjectInCache(key, method2);
 
 
         //  getJsonObjectFromCache(key);

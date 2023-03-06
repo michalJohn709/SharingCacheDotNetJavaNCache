@@ -10,12 +10,15 @@ using System.Xml.Linq;
 using Alachisoft.NCache.Runtime.JSON;
 using Newtonsoft.Json.Linq;
 using System.Collections;
+using Alachisoft.NCache.Runtime.Events;
+using System.ComponentModel;
 
 namespace sharingCache
 {
     public class BasicOperation
     {
         private static ICache _cache;
+        private static CacheEventDescriptor _eventDescriptor;
 
 
         /// <summary>
@@ -46,7 +49,7 @@ namespace sharingCache
         {
             return new Customer
             {
-                CustomerID = "DAVOO",
+                CustomerID = "DAVJ107",
                 ContactName = "David Johnes",
                 CompanyName = "Lonesome Pine Restaurant",
                 ContactNo = "12345-6789",
@@ -115,7 +118,7 @@ namespace sharingCache
         {
             string query = "Select * FROM Alachisoft.NCache.Runtime.JSON.JsonObject WHERE $Tag$ = ?";
             var queryCommand = new QueryCommand(query);
-            queryCommand.Parameters.Add("$Tag$", "Temporary");
+            queryCommand.Parameters.Add("$Tag$", "East Coast Customers");
             
             var queryResult = _cache.SearchService.ExecuteReader(queryCommand);
 
@@ -223,6 +226,27 @@ namespace sharingCache
             return customer;
         }
 
+        private static void RegisterCacheNotification()
+        {
+            _eventDescriptor = _cache.MessagingService.RegisterCacheNotification(new CacheDataNotificationCallback(CacheDataModified),
+                                                   EventType.ItemAdded | EventType.ItemRemoved | EventType.ItemUpdated, 
+            EventDataFilter.Metadata);
+
+            Console.WriteLine("Cache Notification " + ((_eventDescriptor.IsRegistered) ? "Registered successfully" : "Not Registered"));
+        }
+
+
+        private static void UnRegisterCacheNotification()
+        {
+            _cache.MessagingService.UnRegisterCacheNotification(_eventDescriptor);
+            Console.WriteLine("Cache Notification " + "Unregistered successfully");
+        }
+
+        public static void CacheDataModified(string key, CacheEventArg cacheEventArgs)
+        {
+            
+            Console.WriteLine("Event Type "+ cacheEventArgs.EventType +" \n"+"Cache data modification notification for the the item of the key : {0}", key); //To change body of generated methods, choose Tools | Templates.
+        }
         /// <summary>
         /// Executing this method will perform all the operations of the sample
         /// </summary>
@@ -230,24 +254,33 @@ namespace sharingCache
         {
             // Initialize cache
             InitializeCache();
-
+            RegisterCacheNotification();
             // Create a simple customer object
             Customer customer = CreateNewCustomer();
 
-            //PoulateJSONObject
+
+            //Method 1 for converting to json
+            JsonObject method1 = customer.toJson();
+            
+            
+            //method 2 for PoulateJSONObject 
             JsonObject jsonObject = PopulateJSONObjectFromCustomer(customer);
 
             string key = GetKey(customer);
 
             // Adding item synchronously
-            AddJsonObjectToCache(key, jsonObject);
+             AddJsonObjectToCache(key, jsonObject);
 
             //Get JsonObject from Cache
-           // JsonObject getJsonObject = GetJsonObjectFromCache(key);
+            JsonObject getJsonObject = GetJsonObjectFromCache(key);
 
-            //Fetched Customer.
-            //Customer fetchedCustomer = fromJsonObjectToCustomer(getJsonObject);
+            //Method 1 for converting to Customer object
+            Customer fetchedCustomer_Method1 = Customer.fromJson(getJsonObject);
 
+            //Method 2 for converting to Customer object
+            Customer fetchedCustomer = fromJsonObjectToCustomer(getJsonObject);
+           
+            Console.WriteLine("Fetched object is " + fetchedCustomer.CustomerID);
             // Dispose the cache once done
             //  _cache.Dispose();
         }

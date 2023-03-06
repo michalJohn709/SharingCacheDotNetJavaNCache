@@ -1,4 +1,5 @@
 ﻿using Alachisoft.NCache.Runtime.Caching;
+using Alachisoft.NCache.Runtime.JSON;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -97,6 +98,32 @@ namespace SampleData
         {
             set;
             get;
+        }
+        public JsonObject toJson()
+        {
+            var jsonObject = new JsonObject();
+
+            jsonObject.AddAttribute("CustomerID", (JsonValue)this.CustomerID);
+            jsonObject.AddAttribute("ContactName", (JsonValue)this.ContactName);
+            jsonObject.AddAttribute("CompanyName", (JsonValue)this.CompanyName);
+            jsonObject.AddAttribute("ContactNo", (JsonValue)this.ContactNo);
+            jsonObject.AddAttribute("Address", (JsonValue)this.Address);
+
+            return jsonObject;
+        }
+
+        public static Customer fromJson(JsonObject jsonObject)
+        {
+
+            Customer customer = new Customer();
+
+            customer.CustomerID = (jsonObject["CustomerID"] as JsonValue).ToStringValue();
+            customer.ContactName = (jsonObject["ContactName"] as JsonValue).ToStringValue() ?? "";
+            customer.CompanyName = (jsonObject["CompanyName"] as JsonValue).ToStringValue() ?? "";
+            customer.ContactNo = (jsonObject["ContactNo"] as JsonValue).ToStringValue() ?? "";
+            customer.Address = (jsonObject["Address"] as JsonValue).ToStringValue();
+
+            return customer;
         }
 
 

@@ -1,5 +1,9 @@
 package org.example;
 
+import com.alachisoft.ncache.runtime.JSON.JsonObject;
+import com.alachisoft.ncache.runtime.JSON.JsonValue;
+import com.alachisoft.ncache.runtime.exceptions.OperationFailedException;
+
 import java.io.Serializable;
 
 public class Customer implements Serializable
@@ -154,6 +158,34 @@ public class Customer implements Serializable
         fax = value;
     }
 
+    public JsonObject toJson() throws OperationFailedException {
+        JsonObject jsonObject = new JsonObject();
+
+        jsonObject.addAttribute( "CustomerID", new JsonValue(this.getCustomerID()));
+        jsonObject.addAttribute( "ContactName", new JsonValue (this.getContactName()));
+        jsonObject.addAttribute( "CompanyName", new JsonValue (this.getCompanyName()));
+        jsonObject.addAttribute( "ContactNo", new JsonValue (this.getContactNo()));
+        jsonObject.addAttribute( "Address", new JsonValue (this.getAddress()));
+
+        return  jsonObject;
+    }
+
+    public static Customer fromJson(JsonObject jsonObject){
+        JsonValue ID = (JsonValue)((jsonObject.getAttributeValue("CustomerID") instanceof JsonValue) ? jsonObject.getAttributeValue("CustomerID") : null);
+        JsonValue ContactName = (JsonValue)((jsonObject.getAttributeValue("ContactName") instanceof JsonValue) ? jsonObject.getAttributeValue("ContactName") : null);
+        JsonValue CompanyName = (JsonValue)((jsonObject.getAttributeValue("CompanyName") instanceof JsonValue) ? jsonObject.getAttributeValue("CompanyName") : null);
+        JsonValue ContactNo = (JsonValue)((jsonObject.getAttributeValue("ContactNo") instanceof JsonValue) ? jsonObject.getAttributeValue("ContactNo") : null);
+        JsonValue Address = (JsonValue)((jsonObject.getAttributeValue("Address") instanceof JsonValue) ? jsonObject.getAttributeValue("Address") : null);
+
+
+        Customer customer = new Customer();
+        customer.setCustomerID(ID.toStringValue());
+        customer.setContactName(ContactName.toStringValue());
+        customer.setCompanyName(CompanyName.toStringValue());
+        customer.setAddress(Address.toStringValue());
+
+        return customer;
+    }
     @Override
     public String toString() {
         return "Customer{" +
